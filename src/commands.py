@@ -1,12 +1,5 @@
-"""Команды эмулятора."""
-
-
-def make_stub(name):
-    """Создаёт команду-заглушку, которая печатает своё имя и аргументы."""
-    def run(_shell, args):
-        """Выводит имя команды и список аргументов."""
-        return f"{name}: args={args}"
-    return run
+"""Реестр команд эмулятора."""
+from cmd_read import cmd_cd, cmd_du, cmd_find, cmd_head, cmd_ls, cmd_pwd
 
 
 def cmd_exit(shell, _args):
@@ -30,8 +23,12 @@ def cmd_vfs_info(shell, _args):
 
 
 COMMANDS = {
-    "ls": make_stub("ls"),
-    "cd": make_stub("cd"),
+    "ls": cmd_ls,
+    "cd": cmd_cd,
+    "pwd": cmd_pwd,
+    "find": cmd_find,
+    "du": cmd_du,
+    "head": cmd_head,
     "exit": cmd_exit,
     "vfs-info": cmd_vfs_info,
 }

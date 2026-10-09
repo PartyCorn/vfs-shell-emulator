@@ -42,8 +42,8 @@ class SessionTest(unittest.TestCase):
 
     def test_submit_echoes_prompt(self):
         session, out = make_session(["--prompt", "> "])
-        session.submit("ls a")
-        self.assertEqual(out, ["> ls a", "ls: args=['a']"])
+        session.submit("pwd")
+        self.assertEqual(out, ["> pwd", "/"])
 
     def test_start_prints_debug(self):
         session, out = make_session()
@@ -55,17 +55,17 @@ class SessionTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "s.emu")
             with open(path, "w", encoding="utf-8") as handle:
-                handle.write("# c\nbad\n\nls ok\n")
+                handle.write("# c\nbad\n\npwd\n")
             session.run_script(path)
         self.assertEqual(out, ["# c", "$ bad", "bad: command not found",
-                               "$ ls ok", "ls: args=['ok']"])
+                               "$ pwd", "/"])
 
     def test_script_stops_on_exit(self):
         session, out = make_session(["--prompt", "$ "])
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "s.emu")
             with open(path, "w", encoding="utf-8") as handle:
-                handle.write("exit\nls after\n")
+                handle.write("exit\npwd\n")
             session.run_script(path)
         self.assertEqual(out, ["$ exit"])
 

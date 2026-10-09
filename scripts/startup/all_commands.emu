@@ -1,13 +1,49 @@
-# Стартовый скрипт: все команды и режимы реализованных этапов
-# служебная команда и сведения о VFS
+# Стартовый скрипт: все команды и режимы (этапы 1-4), запускать на VFS deep
+# --- служебная команда и текущий каталог
 vfs-info
-# заглушки с аргументами и переменными окружения
+pwd
+# --- ls: обычный, -a, -l, путь, файл, несколько путей
 ls
-ls -l docs "two words" $HOME
-cd docs api
-cd ${HOME}/x
-# ошибки
+ls -a
+ls -l
+ls docs src
+ls docs/guide.txt
+# --- cd: относительный путь, .., абсолютный путь, без аргумента
+cd docs/api
+pwd
+ls
+cd ../..
+cd /src/app
+ls -l
+cd
+# --- find: без аргументов, -name, -type, путь, оба условия
+find docs
+find -name "*.txt"
+find src -type d
+find / -type f -name "spec*"
+# --- du: по умолчанию, -s, -h, -a, файл
+du docs
+du -s docs
+du -sh docs
+du -a src
+du docs/guide.txt
+# --- head: по умолчанию, -n, несколько файлов
+head docs/guide.txt
+head -n 1 docs/api/v1/spec.txt docs/api/v2/spec.txt
+# --- ошибки
+ls nothing
+ls -z
+cd docs/guide.txt
+cd nothing
+cd a b
+find nothing
+find -type x
+du nothing
+head docs
+head nothing
+head -n x docs/guide.txt
+head
 unknown_command arg
 ls "незакрытая кавычка
 # после ошибок диалог продолжается
-vfs-info
+pwd

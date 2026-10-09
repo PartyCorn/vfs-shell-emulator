@@ -1,0 +1,8 @@
+# Скрытые файлы, head и du на VFS several
+ls
+ls -a
+ls -l
+head log.txt
+head -n 3 notes.txt readme.txt
+du -a
+du -sh
