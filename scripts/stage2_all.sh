@@ -4,7 +4,7 @@
 export HOME=/home/user
 
 echo "--- все параметры"
-emu --vfs examples/vfs_demo --prompt "vfs$ " \
+emu --vfs examples/several --prompt "vfs$ " \
     --script scripts/startup/basic.emu < /dev/null
 echo "--- неизвестный параметр"
 emu --unknown 2>&1 < /dev/null

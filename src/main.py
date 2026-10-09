@@ -1,10 +1,13 @@
 """Точка входа эмулятора."""
-import os
 import sys
 
 from config import parse_args
+from errors import VfsError
 from session import Session
 from shell import Shell
+from vfs import Vfs
+
+EXIT_BAD_VFS = 2
 
 
 def run_console(session):
@@ -21,11 +24,11 @@ def run_console(session):
         session.submit(line, echo=False)
 
 
-def vfs_name(config):
-    """Имя VFS для заголовка: имя каталога из --vfs или vfs."""
+def load_vfs(config):
+    """Загружает VFS из каталога --vfs или создаёт пустую."""
     if config.vfs:
-        return os.path.basename(config.vfs.rstrip("/")) or "vfs"
-    return "vfs"
+        return Vfs.from_directory(config.vfs)
+    return Vfs()
 
 
 def run_gui(shell, config):
@@ -36,14 +39,18 @@ def run_gui(shell, config):
         """Создаёт сессию с выводом в окно."""
         return Session(shell, emit, config)
 
-    title = f"Эмулятор оболочки | VFS: {shell.vfs_name}"
+    title = f"Эмулятор оболочки | VFS: {shell.vfs.name}"
     EmulatorWindow(title, make_session).run()
 
 
 def main(argv=None):
     """Запускает эмулятор в нужном режиме."""
     config = parse_args(argv)
-    shell = Shell(vfs_name(config))
+    try:
+        shell = Shell(load_vfs(config))
+    except VfsError as err:
+        print(f"emulator: error: {err}", file=sys.stderr)
+        return EXIT_BAD_VFS
     if config.headless:
         run_console(Session(shell, print, config))
     else:

@@ -14,13 +14,17 @@ class Session:
         self.config = config
 
     def prompt_text(self):
-        """Текущее приглашение к вводу."""
-        return self.config.prompt
+        """Приглашение, {vfs} и {cwd} заменяются текущими значениями."""
+        text = self.config.prompt.replace("{vfs}", self.shell.vfs.name)
+        return text.replace("{cwd}", self.shell.cwd_text())
 
     def start(self):
-        """Печатает параметры и выполняет стартовый скрипт."""
+        """Печатает параметры и motd, выполняет стартовый скрипт."""
         for line in format_debug(self.config):
             self.emit(line)
+        motd = self.shell.vfs.motd()
+        if motd is not None:
+            self.emit(motd)
         if self.config.script:
             self.run_script(self.config.script)
 

@@ -2,15 +2,25 @@
 from commands import COMMANDS
 from errors import ShellError
 from lineparse import ParseError, parse_line
+from vfs import Vfs, split_path
 
 
 class Shell:
     """Состояние оболочки и выполнение введённых строк."""
 
-    def __init__(self, vfs_name="vfs"):
-        """Создаёт оболочку с именем VFS для заголовка окна."""
-        self.vfs_name = vfs_name
+    def __init__(self, vfs=None):
+        """Создаёт оболочку над VFS, по умолчанию пустой."""
+        self.vfs = vfs if vfs is not None else Vfs()
+        self.cwd = []
         self.running = True
+
+    def resolve(self, path):
+        """Превращает путь пользователя в список имён от корня."""
+        return split_path(self.cwd, path)
+
+    def cwd_text(self):
+        """Текущий каталог в виде строки, например /docs/api."""
+        return "/" + "/".join(self.cwd)
 
     def execute(self, line):
         """Выполняет строку и возвращает текст вывода или ошибки."""

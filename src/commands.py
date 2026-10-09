@@ -1,4 +1,4 @@
-"""Команды эмулятора: на первом этапе заглушки и exit."""
+"""Команды эмулятора."""
 
 
 def make_stub(name):
@@ -15,8 +15,23 @@ def cmd_exit(shell, _args):
     return ""
 
 
+def cmd_vfs_info(shell, _args):
+    """Служебная команда: сводка о загруженной VFS."""
+    vfs = shell.vfs
+    info = vfs.stats()
+    return "\n".join([
+        f"name: {vfs.name}",
+        f"source: {vfs.source or '<память>'}",
+        f"dirs: {info['dirs']}",
+        f"files: {info['files']}",
+        f"size: {info['size']} bytes",
+        f"depth: {info['depth']}",
+    ])
+
+
 COMMANDS = {
     "ls": make_stub("ls"),
     "cd": make_stub("cd"),
     "exit": cmd_exit,
+    "vfs-info": cmd_vfs_info,
 }

@@ -2,7 +2,7 @@
 import argparse
 
 NOT_SET = "<не задан>"
-DEFAULT_PROMPT = "$ "
+DEFAULT_PROMPT = "{vfs}:{cwd}$ "
 
 
 def build_parser():
@@ -12,11 +12,11 @@ def build_parser():
     )
     parser.add_argument(
         "--vfs", metavar="PATH",
-        help="путь к физическому расположению VFS",
+        help="каталог на диске, источник VFS",
     )
     parser.add_argument(
         "--prompt", default=DEFAULT_PROMPT,
-        help="приглашение к вводу (по умолчанию '$ ')",
+        help="приглашение, можно {vfs} и {cwd}",
     )
     parser.add_argument(
         "--script", metavar="PATH",

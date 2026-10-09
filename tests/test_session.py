@@ -6,6 +6,7 @@ import unittest
 from config import format_debug, parse_args
 from session import Session
 from shell import Shell
+from vfs import VNode
 
 
 def make_session(argv=()):
@@ -20,7 +21,7 @@ class ConfigTest(unittest.TestCase):
 
     def test_defaults(self):
         config = parse_args([])
-        self.assertEqual(config.prompt, "$ ")
+        self.assertEqual(config.prompt, "{vfs}:{cwd}$ ")
         self.assertIsNone(config.vfs)
         self.assertIsNone(config.script)
 
@@ -50,7 +51,7 @@ class SessionTest(unittest.TestCase):
         self.assertTrue(out[0].startswith("[debug]"))
 
     def test_script_skips_bad_lines_and_continues(self):
-        session, out = make_session()
+        session, out = make_session(["--prompt", "$ "])
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "s.emu")
             with open(path, "w", encoding="utf-8") as handle:
@@ -60,7 +61,7 @@ class SessionTest(unittest.TestCase):
                                "$ ls ok", "ls: args=['ok']"])
 
     def test_script_stops_on_exit(self):
-        session, out = make_session()
+        session, out = make_session(["--prompt", "$ "])
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "s.emu")
             with open(path, "w", encoding="utf-8") as handle:
@@ -72,6 +73,20 @@ class SessionTest(unittest.TestCase):
         session, out = make_session()
         session.run_script("/no/such/script")
         self.assertIn("No such file", out[0])
+
+    def test_prompt_placeholders(self):
+        session, _out = make_session(["--prompt", "{vfs}@{cwd}> "])
+        self.assertEqual(session.prompt_text(), "vfs@/> ")
+
+    def test_motd_printed_at_start(self):
+        session, out = make_session()
+        session.shell.vfs.root.children["motd"] = VNode("motd", data=b"hi\n")
+        session.start()
+        self.assertIn("hi", out)
+
+    def test_vfs_info(self):
+        session, _out = make_session()
+        self.assertIn("files: 0", session.shell.execute("vfs-info"))
 
 
 if __name__ == "__main__":

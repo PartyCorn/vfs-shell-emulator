@@ -8,7 +8,7 @@
 
 - [x] Этап 1. REPL
 - [x] Этап 2. Конфигурация
-- [ ] Этап 3. VFS
+- [x] Этап 3. VFS
 - [ ] Этап 4. Основные команды
 - [ ] Этап 5. Дополнительные команды
 
@@ -22,8 +22,8 @@
 
 | Параметр | Описание |
 |---|---|
-| `--vfs PATH` | Путь к физическому расположению VFS (пока только выводится в отладке) |
-| `--prompt STR` | Приглашение к вводу. По умолчанию `$ ` |
+| `--vfs PATH` | Каталог на диске, из которого строится VFS |
+| `--prompt STR` | Приглашение. Можно использовать `{vfs}` (имя VFS) и `{cwd}` (текущий каталог). По умолчанию `{vfs}:{cwd}$ ` |
 | `--script PATH` | Стартовый скрипт эмулятора |
 | `--headless` | Консольный режим без окна. Нужен для тестов и скриптов |
 
@@ -36,6 +36,16 @@
 | `ls [args]` | Заглушка, печатает имя и аргументы |
 | `cd [args]` | Заглушка, печатает имя и аргументы |
 | `exit` | Завершает работу эмулятора |
+| `vfs-info` | Служебная команда: имя, источник, число каталогов и файлов, размер, глубина VFS |
+
+### VFS
+
+- Источник VFS: каталог на диске, который указан в `--vfs`. Без параметра работает пустая VFS с именем `vfs`.
+- Каталог читается в память целиком при старте. Все операции идут над деревом в памяти, диск не изменяется.
+- Имя VFS равно имени каталога. Оно показывается в заголовке окна и в приглашении.
+- Если в корне VFS есть файл `motd`, его текст выводится при старте после отладочных строк.
+- Символические ссылки при загрузке пропускаются.
+- Если каталог не найден или это файл, эмулятор печатает ошибку в stderr и завершается с кодом 2.
 
 ### Стартовый скрипт
 
@@ -62,11 +72,12 @@
 | `main.py` | Точка входа. `main`, `run_gui`, `run_console` |
 | `config.py` | Разбор параметров. `parse_args`, `build_parser`, `format_debug` |
 | `lineparse.py` | `expand_env` раскрывает переменные, `parse_line` делит строку на токены |
-| `shell.py` | Класс `Shell`. Метод `execute` выполняет строку и возвращает текст |
+| `shell.py` | Класс `Shell`. `execute` выполняет строку, `resolve` строит путь от корня, `cwd_text` печатает текущий каталог |
 | `commands.py` | Реестр `COMMANDS` и сами команды |
 | `session.py` | Класс `Session`. Приглашение, эхо ввода, отладочный вывод, `run_script` и `play_line` для скриптов |
 | `gui.py` | Класс `EmulatorWindow`. Окно, ввод, история команд (стрелки вверх и вниз) |
-| `errors.py` | Исключение `ShellError` |
+| `vfs.py` | Класс `Vfs` (`from_directory`, `get`, `find`, `put`, `motd`, `stats`), узел `VNode` (`size`, `clone`), функция `split_path` |
+| `errors.py` | Исключения `ShellError` и `VfsError` |
 
 ## 3. Команды сборки и запуска тестов
 
@@ -80,6 +91,9 @@ sh scripts/stage1.sh   # демо этапа 1 без окна
 sh scripts/stage2_prompt.sh   # параметр --prompt
 sh scripts/stage2_script.sh   # параметр --script
 sh scripts/stage2_all.sh      # все параметры и ошибки параметров
+sh scripts/stage3_vfs.sh      # разные VFS и motd
+sh scripts/stage3_errors.sh   # ошибки загрузки VFS
+sh scripts/stage3_all.sh      # общий стартовый скрипт на разных VFS
 EMU_GUI=1 sh scripts/stage1.sh   # то же, но с окном
 ```
 
@@ -150,4 +164,47 @@ $
 [debug] prompt = '> '
 [debug] script = 'scripts/startup/exit_midway.emu'
 [debug] headless = True
+```
+
+### Этап 3. Скрипты `scripts/stage3_*.sh`
+
+Три варианта VFS лежат в `examples/`: `minimal` (один файл), `several` (несколько файлов, есть `motd`), `deep` (четыре уровня вложенности, есть `motd`). Общий стартовый скрипт `scripts/startup/all_commands.emu` вызывает все команды с ошибками, он запускается на разных VFS в `stage3_all.sh`.
+
+VFS `deep` с motd и служебной командой:
+
+```text
+--- VFS deep
+[debug] vfs = 'examples/deep'
+[debug] prompt = '{vfs}:{cwd}$ '
+[debug] script = <не задан>
+[debug] headless = True
+VFS deep: три и более уровней вложенности.
+deep:/$ vfs-info
+name: deep
+source: examples/deep
+dirs: 7
+files: 8
+size: 326 bytes
+depth: 4
+deep:/$ 
+--- имя VFS в приглашении
+VFS deep: три и более уровней вложенности.
+[deep] /> vfs-info
+name: deep
+source: examples/deep
+dirs: 7
+files: 8
+size: 326 bytes
+depth: 4
+```
+
+Ошибки загрузки:
+
+```text
+--- каталога нет
+emulator: error: examples/missing: No such file or directory
+exit code: 2
+--- вместо каталога файл
+emulator: error: examples/several/readme.txt: Not a directory
+exit code: 2
 ```
