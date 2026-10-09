@@ -25,6 +25,17 @@ class ShellTest(unittest.TestCase):
         self.shell.execute("exit")
         self.assertFalse(self.shell.running)
 
+    def test_help_lists_all_commands(self):
+        out = self.shell.execute("help")
+        self.assertIn("cp [-r]", out)
+        self.assertIn("exit", out)
+
+    def test_help_for_one_command(self):
+        self.assertTrue(self.shell.execute("help ls").startswith("ls"))
+
+    def test_help_unknown(self):
+        self.assertIn("no help", self.shell.execute("help nope"))
+
 
 if __name__ == "__main__":
     unittest.main()

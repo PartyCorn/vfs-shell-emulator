@@ -3,8 +3,8 @@ import tkinter as tk
 
 BG_COLOR = "#1e1e1e"
 FG_COLOR = "#d4d4d4"
-FONT = ("DejaVu Sans Mono", 11)
-WINDOW_SIZE = "820x520"
+FONT = ("DejaVu Sans Mono", 15)
+WINDOW_SIZE = "1100x700"
 START_DELAY_MS = 100
 
 
@@ -41,11 +41,13 @@ class EmulatorWindow:
         self.entry = tk.Entry(
             bottom, bg=BG_COLOR, fg=FG_COLOR, font=FONT,
             insertbackground=FG_COLOR, relief="flat",
+            highlightthickness=0, cursor=f"xterm {FG_COLOR}"
         )
         self.entry.pack(side="left", fill="x", expand=True)
         self.output = tk.Text(
             self.root, bg=BG_COLOR, fg=FG_COLOR, font=FONT,
             state="disabled", wrap="word",
+            cursor=f"left_ptr {FG_COLOR}"
         )
         self.output.pack(side="top", fill="both", expand=True)
         self.entry.bind("<Return>", self.on_enter)
