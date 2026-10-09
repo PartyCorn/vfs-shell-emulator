@@ -1,0 +1,6 @@
+# Самая маленькая VFS: копирование и создание файлов
+ls
+cp hello.txt copy.txt
+touch empty.txt
+ls -l
+head copy.txt

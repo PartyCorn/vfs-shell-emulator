@@ -10,7 +10,7 @@
 - [x] Этап 2. Конфигурация
 - [x] Этап 3. VFS
 - [x] Этап 4. Основные команды
-- [ ] Этап 5. Дополнительные команды
+- [x] Этап 5. Дополнительные команды
 
 ### Этап 1. REPL
 
@@ -40,6 +40,8 @@
 | `pwd` | Печатает текущий каталог |
 | `find [путь...] [-name шаблон] [-type f\|d]` | Рекурсивный поиск. Пути в выводе записываются так же, как указаны. Шаблон работает как `fnmatch` |
 | `du [-a] [-h] [-s] [путь...]` | Размеры в байтах. По умолчанию строка на каждый каталог, `-a` добавляет файлы, `-s` только итог, `-h` читаемый вид (K, M, G) |
+| `touch файл...` | Создаёт пустые файлы. Существующие файлы не меняются. Ошибка, если родительского каталога нет или он файл |
+| `cp [-r] источник... назначение` | Копирует файлы. Если назначение каталог, источники копируются в него. Для каталогов нужен `-r` (или `-R`), существующие каталоги сливаются, файлы заменяются |
 | `head [-n N] файл...` | Первые N строк файла, по умолчанию 10. Для нескольких файлов печатаются заголовки `==> имя <==` |
 | `exit` | Завершает работу эмулятора |
 | `vfs-info` | Служебная команда: имя, источник, число каталогов и файлов, размер, глубина VFS |
@@ -63,6 +65,10 @@
 - `exit` останавливает скрипт и закрывает эмулятор.
 - Если файл не найден, печатается ошибка и эмулятор работает в обычном режиме.
 
+### Изменения VFS
+
+Команды `touch` и `cp` меняют только дерево в памяти. Каталог на диске не изменяется. Копия независима от оригинала. Ошибки: копирование каталога без `-r`, в самого себя, файла поверх каталога и каталога поверх файла, несуществующий источник или назначение.
+
 ### Синтаксис строки
 
 - `$VAR` и `${VAR}` заменяются значением переменной окружения. Неизвестная переменная даёт пустую строку.
@@ -81,6 +87,7 @@
 | `shell.py` | Класс `Shell`. `execute` выполняет строку, `resolve` строит путь от корня, `cwd_text` печатает текущий каталог |
 | `commands.py` | Реестр `COMMANDS`, команды `exit` и `vfs-info` |
 | `cmd_read.py` | Команды `ls`, `cd`, `pwd`, `find`, `du`, `head` |
+| `cmd_write.py` | Команды `touch` и `cp` |
 | `cmdutil.py` | `get_node` (поиск узла с понятной ошибкой), `split_flags` (разбор флагов), `join_path`, `node_text` |
 | `session.py` | Класс `Session`. Приглашение, эхо ввода, отладочный вывод, `run_script` и `play_line` для скриптов |
 | `gui.py` | Класс `EmulatorWindow`. Окно, ввод, история команд (стрелки вверх и вниз) |
@@ -94,7 +101,7 @@
 ```sh
 make run          # запуск с окном (или ./run.sh)
 make test         # модульные тесты (unittest)
-make demo         # все демонстрационные скрипты
+make demo         # все демонстрационные скрипты (scripts/stage*.sh)
 sh scripts/stage1.sh   # демо этапа 1 без окна
 sh scripts/stage2_prompt.sh   # параметр --prompt
 sh scripts/stage2_script.sh   # параметр --script
@@ -103,6 +110,7 @@ sh scripts/stage3_vfs.sh      # разные VFS и motd
 sh scripts/stage3_errors.sh   # ошибки загрузки VFS
 sh scripts/stage3_all.sh      # общий стартовый скрипт на разных VFS
 sh scripts/stage4_all.sh      # все команды этапа 4 и ошибки
+sh scripts/stage5_all.sh      # touch и cp, проверка диска
 EMU_GUI=1 sh scripts/stage1.sh   # то же, но с окном
 ```
 
@@ -256,7 +264,7 @@ emulator: error: examples/several/readme.txt: Not a directory
 [debug] script = 'scripts/startup/all_commands.emu'
 [debug] headless = True
 VFS deep: три и более уровней вложенности.
-# Стартовый скрипт: все команды и режимы (этапы 1-4), запускать на VFS deep
+# Стартовый скрипт: все команды и режимы (этапы 1-5), запускать на VFS deep
 # --- служебная команда и текущий каталог
 deep:/$ vfs-info
 name: deep
@@ -351,7 +359,21 @@ API v1
 
 ==> docs/api/v2/spec.txt <==
 API v2
+# --- touch и cp (этап 5)
+deep:/$ touch new.txt
+deep:/$ cp -r docs docs_copy
+deep:/$ cp motd docs_copy
+deep:/$ find docs_copy -type f
+docs_copy/api/v1/changelog.txt
+docs_copy/api/v1/spec.txt
+docs_copy/api/v2/spec.txt
+docs_copy/guide.txt
+docs_copy/motd
 # --- ошибки
+deep:/$ touch nodir/x.txt
+touch: nodir/x.txt: No such file or directory
+deep:/$ cp nothing x
+cp: nothing: No such file or directory
 deep:/$ ls nothing
 ls: nothing: No such file or directory
 deep:/$ ls -z
@@ -431,4 +453,125 @@ $ du -a
 $ du -sh
 675B	.
 $ 
+```
+
+### Этап 5. `scripts/stage5_all.sh`
+
+Скрипт `scripts/startup/stage5.emu` проверяет `touch` и `cp` во всех режимах. Затем скрипт реальной ОС сравнивает каталог на диске до и после работы.
+
+```text
+--- stage5.emu на VFS deep
+[debug] vfs = 'examples/deep'
+[debug] prompt = '{vfs}:{cwd}$ '
+[debug] script = 'scripts/startup/stage5.emu'
+[debug] headless = True
+VFS deep: три и более уровней вложенности.
+# Стартовый скрипт этапа 5: touch и cp, изменения только в памяти (VFS deep)
+# --- touch: новый файл, несколько файлов, существующий файл
+deep:/$ touch new.txt
+deep:/$ touch a.txt b.txt docs/empty.txt
+deep:/$ touch docs/guide.txt
+deep:/$ ls
+a.txt  b.txt  docs  motd  new.txt  src
+deep:/$ ls -l docs
+d      105 api
+-        0 empty.txt
+-       41 guide.txt
+# --- cp: файл в файл (новое имя) и перезапись
+deep:/$ cp motd motd.bak
+deep:/$ cp docs/guide.txt motd.bak
+deep:/$ head motd.bak
+Руководство
+Шаг 1
+Шаг 2
+# --- cp: файл в каталог, несколько файлов в каталог
+deep:/$ cp motd src
+deep:/$ cp docs/guide.txt docs/empty.txt src/app
+deep:/$ find src -type f
+src/app/empty.txt
+src/app/guide.txt
+src/app/main.txt
+src/app/util/helpers.txt
+src/index.txt
+src/motd
+# --- cp -r: новое имя, в существующий каталог, слияние каталогов
+deep:/$ cp -r docs docs_copy
+deep:/$ find docs_copy
+docs_copy
+docs_copy/api
+docs_copy/api/v1
+docs_copy/api/v1/changelog.txt
+docs_copy/api/v1/spec.txt
+docs_copy/api/v2
+docs_copy/api/v2/spec.txt
+docs_copy/empty.txt
+docs_copy/guide.txt
+deep:/$ cp -r docs/api src
+deep:/$ cp -r docs/api/v1 src/api
+deep:/$ find src -name "spec*"
+src/api/v1/spec.txt
+src/api/v2/spec.txt
+# --- копия независима от оригинала
+deep:/$ touch docs_copy/only_in_copy.txt
+deep:/$ find docs -name "only*"
+deep:/$ find docs_copy -name "only*"
+docs_copy/only_in_copy.txt
+deep:/$ du -s docs docs_copy
+146	docs
+146	docs_copy
+# --- ошибки touch
+deep:/$ touch
+touch: missing file operand
+deep:/$ touch nodir/x.txt
+touch: nodir/x.txt: No such file or directory
+deep:/$ touch motd/x
+touch: motd/x: Not a directory
+deep:/$ touch -z x
+touch: invalid option -- 'z'
+# --- ошибки cp
+deep:/$ cp
+cp: missing file operand
+deep:/$ cp motd
+cp: missing destination file operand after 'motd'
+deep:/$ cp nothing x
+cp: nothing: No such file or directory
+deep:/$ cp motd nodir/x
+cp: cannot copy 'motd' to '/nodir/x': No such file or directory
+deep:/$ cp docs x
+cp: -r not specified; omitting directory 'docs'
+deep:/$ cp motd docs/guide.txt nodir
+cp: target 'nodir' is not a directory
+deep:/$ cp motd motd
+cp: 'motd' and '/motd' are the same file
+deep:/$ cp -r docs docs/api
+cp: cannot copy a directory, 'docs', into itself, '/docs/api/docs'
+deep:/$ cp -r docs motd
+cp: cannot copy 'docs' to '/motd': cannot overwrite non-directory with directory
+deep:/$ cp motd docs/guide.txt/x
+cp: cannot copy 'motd' to '/docs/guide.txt/x': Not a directory
+deep:/$ cp -z motd x
+cp: invalid option -- 'z'
+# после ошибок диалог продолжается
+deep:/$ pwd
+/
+deep:/$ 
+--- stage5_minimal.emu на VFS minimal
+[debug] vfs = 'examples/minimal'
+[debug] prompt = '$ '
+[debug] script = 'scripts/startup/stage5_minimal.emu'
+[debug] headless = True
+# Самая маленькая VFS: копирование и создание файлов
+$ ls
+hello.txt
+$ cp hello.txt copy.txt
+$ touch empty.txt
+$ ls -l
+-       46 copy.txt
+-        0 empty.txt
+-       46 hello.txt
+$ head copy.txt
+Привет из минимальной VFS.
+$ 
+--- каталог examples на диске до и после
+диск не изменён: OK
 ```

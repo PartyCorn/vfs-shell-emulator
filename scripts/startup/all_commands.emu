@@ -1,4 +1,4 @@
-# Стартовый скрипт: все команды и режимы (этапы 1-4), запускать на VFS deep
+# Стартовый скрипт: все команды и режимы (этапы 1-5), запускать на VFS deep
 # --- служебная команда и текущий каталог
 vfs-info
 pwd
@@ -30,7 +30,14 @@ du docs/guide.txt
 # --- head: по умолчанию, -n, несколько файлов
 head docs/guide.txt
 head -n 1 docs/api/v1/spec.txt docs/api/v2/spec.txt
+# --- touch и cp (этап 5)
+touch new.txt
+cp -r docs docs_copy
+cp motd docs_copy
+find docs_copy -type f
 # --- ошибки
+touch nodir/x.txt
+cp nothing x
 ls nothing
 ls -z
 cd docs/guide.txt

@@ -1,5 +1,6 @@
 """Реестр команд эмулятора."""
 from cmd_read import cmd_cd, cmd_du, cmd_find, cmd_head, cmd_ls, cmd_pwd
+from cmd_write import cmd_cp, cmd_touch
 
 
 def cmd_exit(shell, _args):
@@ -28,6 +29,8 @@ COMMANDS = {
     "pwd": cmd_pwd,
     "find": cmd_find,
     "du": cmd_du,
+    "touch": cmd_touch,
+    "cp": cmd_cp,
     "head": cmd_head,
     "exit": cmd_exit,
     "vfs-info": cmd_vfs_info,

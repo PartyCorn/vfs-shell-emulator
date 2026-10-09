@@ -1,0 +1,45 @@
+# Стартовый скрипт этапа 5: touch и cp, изменения только в памяти (VFS deep)
+# --- touch: новый файл, несколько файлов, существующий файл
+touch new.txt
+touch a.txt b.txt docs/empty.txt
+touch docs/guide.txt
+ls
+ls -l docs
+# --- cp: файл в файл (новое имя) и перезапись
+cp motd motd.bak
+cp docs/guide.txt motd.bak
+head motd.bak
+# --- cp: файл в каталог, несколько файлов в каталог
+cp motd src
+cp docs/guide.txt docs/empty.txt src/app
+find src -type f
+# --- cp -r: новое имя, в существующий каталог, слияние каталогов
+cp -r docs docs_copy
+find docs_copy
+cp -r docs/api src
+cp -r docs/api/v1 src/api
+find src -name "spec*"
+# --- копия независима от оригинала
+touch docs_copy/only_in_copy.txt
+find docs -name "only*"
+find docs_copy -name "only*"
+du -s docs docs_copy
+# --- ошибки touch
+touch
+touch nodir/x.txt
+touch motd/x
+touch -z x
+# --- ошибки cp
+cp
+cp motd
+cp nothing x
+cp motd nodir/x
+cp docs x
+cp motd docs/guide.txt nodir
+cp motd motd
+cp -r docs docs/api
+cp -r docs motd
+cp motd docs/guide.txt/x
+cp -z motd x
+# после ошибок диалог продолжается
+pwd
