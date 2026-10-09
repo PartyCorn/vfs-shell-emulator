@@ -1,0 +1,7 @@
+# Стартовый скрипт этапа 2: диалог с ошибочными строками
+ls -l $HOME
+cd /usr "two words"
+
+unknown_command arg
+ls "незакрытая кавычка
+cd ${HOME}/docs

@@ -1,5 +1,8 @@
-"""Параметры командной строки."""
+"""Параметры командной строки и их отладочный вывод."""
 import argparse
+
+NOT_SET = "<не задан>"
+DEFAULT_PROMPT = "$ "
 
 
 def build_parser():
@@ -8,8 +11,19 @@ def build_parser():
         description="Эмулятор оболочки UNIX-подобной ОС с GUI"
     )
     parser.add_argument(
-        "--headless",
-        action="store_true",
+        "--vfs", metavar="PATH",
+        help="путь к физическому расположению VFS",
+    )
+    parser.add_argument(
+        "--prompt", default=DEFAULT_PROMPT,
+        help="приглашение к вводу (по умолчанию '$ ')",
+    )
+    parser.add_argument(
+        "--script", metavar="PATH",
+        help="путь к стартовому скрипту эмулятора",
+    )
+    parser.add_argument(
+        "--headless", action="store_true",
         help="консольный режим без окна (для тестов и CI)",
     )
     return parser
@@ -18,3 +32,12 @@ def build_parser():
 def parse_args(argv=None):
     """Разбирает аргументы, argv=None означает sys.argv."""
     return build_parser().parse_args(argv)
+
+
+def format_debug(config):
+    """Возвращает строки отладочного вывода всех параметров."""
+    lines = []
+    for name, value in vars(config).items():
+        shown = NOT_SET if value is None else repr(value)
+        lines.append(f"[debug] {name} = {shown}")
+    return lines

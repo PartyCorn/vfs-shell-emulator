@@ -7,7 +7,7 @@
 Текущий статус по этапам:
 
 - [x] Этап 1. REPL
-- [ ] Этап 2. Конфигурация
+- [x] Этап 2. Конфигурация
 - [ ] Этап 3. VFS
 - [ ] Этап 4. Основные команды
 - [ ] Этап 5. Дополнительные команды
@@ -22,7 +22,12 @@
 
 | Параметр | Описание |
 |---|---|
+| `--vfs PATH` | Путь к физическому расположению VFS (пока только выводится в отладке) |
+| `--prompt STR` | Приглашение к вводу. По умолчанию `$ ` |
+| `--script PATH` | Стартовый скрипт эмулятора |
 | `--headless` | Консольный режим без окна. Нужен для тестов и скриптов |
+
+При запуске эмулятор выводит отладочные строки `[debug] имя = значение` для всех параметров.
 
 ### Команды
 
@@ -31,6 +36,16 @@
 | `ls [args]` | Заглушка, печатает имя и аргументы |
 | `cd [args]` | Заглушка, печатает имя и аргументы |
 | `exit` | Завершает работу эмулятора |
+
+### Стартовый скрипт
+
+Файл с командами эмулятора, одна команда на строку.
+
+- Строки выполняются по очереди, на экране видны приглашение, ввод и вывод.
+- Пустые строки пропускаются, строки с `#` выводятся как комментарий.
+- Ошибочная строка даёт сообщение об ошибке, выполнение идёт дальше.
+- `exit` останавливает скрипт и закрывает эмулятор.
+- Если файл не найден, печатается ошибка и эмулятор работает в обычном режиме.
 
 ### Синтаксис строки
 
@@ -45,11 +60,11 @@
 | Модуль | Назначение |
 |---|---|
 | `main.py` | Точка входа. `main`, `run_gui`, `run_console` |
-| `config.py` | Разбор параметров. `parse_args`, `build_parser` |
+| `config.py` | Разбор параметров. `parse_args`, `build_parser`, `format_debug` |
 | `lineparse.py` | `expand_env` раскрывает переменные, `parse_line` делит строку на токены |
 | `shell.py` | Класс `Shell`. Метод `execute` выполняет строку и возвращает текст |
 | `commands.py` | Реестр `COMMANDS` и сами команды |
-| `session.py` | Класс `Session`. Приглашение, эхо ввода, вывод |
+| `session.py` | Класс `Session`. Приглашение, эхо ввода, отладочный вывод, `run_script` и `play_line` для скриптов |
 | `gui.py` | Класс `EmulatorWindow`. Окно, ввод, история команд (стрелки вверх и вниз) |
 | `errors.py` | Исключение `ShellError` |
 
@@ -62,6 +77,9 @@ make run          # запуск с окном (или ./run.sh)
 make test         # модульные тесты (unittest)
 make demo         # все демонстрационные скрипты
 sh scripts/stage1.sh   # демо этапа 1 без окна
+sh scripts/stage2_prompt.sh   # параметр --prompt
+sh scripts/stage2_script.sh   # параметр --script
+sh scripts/stage2_all.sh      # все параметры и ошибки параметров
 EMU_GUI=1 sh scripts/stage1.sh   # то же, но с окном
 ```
 
@@ -84,4 +102,52 @@ foo: command not found
 $ ls "unclosed
 parse error: No closing quotation
 $ exit
+```
+
+### Этап 2. Скрипты `scripts/stage2_*.sh`
+
+Скрипты реальной ОС вызывают эмулятор со всеми параметрами. Стартовые скрипты эмулятора лежат в `scripts/startup/`.
+
+Параметр `--prompt` (фрагмент вывода `stage2_prompt.sh`):
+
+```text
+--- без параметров
+[debug] vfs = <не задан>
+[debug] prompt = '$ '
+[debug] script = <не задан>
+[debug] headless = True
+$ ls
+ls: args=[]
+$ exit
+--- свой prompt
+[debug] vfs = <не задан>
+[debug] prompt = 'emu> '
+[debug] script = <не задан>
+```
+
+Параметр `--script` (фрагмент вывода `stage2_script.sh`):
+
+```text
+--- стартовый скрипт с ошибочными строками
+[debug] vfs = <не задан>
+[debug] prompt = '$ '
+[debug] script = 'scripts/startup/basic.emu'
+[debug] headless = True
+# Стартовый скрипт этапа 2: диалог с ошибочными строками
+$ ls -l $HOME
+ls: args=['-l', '/home/user']
+$ cd /usr "two words"
+cd: args=['/usr', 'two words']
+$ unknown_command arg
+unknown_command: command not found
+$ ls "незакрытая кавычка
+parse error: No closing quotation
+$ cd ${HOME}/docs
+cd: args=['/home/user/docs']
+$ 
+--- exit в середине скрипта
+[debug] vfs = <не задан>
+[debug] prompt = '> '
+[debug] script = 'scripts/startup/exit_midway.emu'
+[debug] headless = True
 ```

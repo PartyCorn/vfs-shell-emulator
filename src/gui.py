@@ -5,6 +5,7 @@ BG_COLOR = "#1e1e1e"
 FG_COLOR = "#d4d4d4"
 FONT = ("DejaVu Sans Mono", 11)
 WINDOW_SIZE = "820x520"
+START_DELAY_MS = 100
 
 
 class EmulatorWindow:
@@ -21,6 +22,13 @@ class EmulatorWindow:
         self.session = make_session(self.write)
         self.refresh_prompt()
         self.entry.focus_set()
+        self.root.after(START_DELAY_MS, self.start)
+
+    def start(self):
+        """Запускает отладочный вывод и стартовый скрипт."""
+        self.session.start()
+        self.refresh_prompt()
+        self.close_if_done()
 
     def _build_widgets(self):
         """Создаёт и раскладывает виджеты."""

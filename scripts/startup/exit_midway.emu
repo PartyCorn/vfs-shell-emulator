@@ -1,0 +1,4 @@
+# После exit остальные строки не выполняются
+ls before
+exit
+ls after
